@@ -9,6 +9,58 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
+from sequoia.brain import Brain
+
+
+class ThinkingAnimation:
+    """A class to handle the thinking animation during LLM processing"""
+
+    def __init__(self):
+        self.animation_chars = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+        self.animation_running = False
+        self.animation_task = None
+
+    async def _animate(self):
+        """Internal method to run the animation"""
+        i = 0
+        while self.animation_running:
+            # Use sys.stdout.write to update the same line with animation
+            sys.stdout.write(
+                f"\r{self.animation_chars[i % len(self.animation_chars)]} Thinking..."
+            )
+            sys.stdout.flush()
+            i += 1
+            await asyncio.sleep(0.1)
+
+    def start(self):
+        """Start the animation"""
+        if not self.animation_running:
+            self.animation_running = True
+            self.animation_task = asyncio.create_task(self._animate())
+
+    def stop(self):
+        """Stop the animation and clear the line"""
+        if self.animation_running:
+            self.animation_running = False
+            # Clear the line with spaces and return cursor to start
+            sys.stdout.write("\r" + " " * 30 + "\r")  # Clear approximately 30 chars
+            sys.stdout.flush()
+
+    def is_running(self):
+        """Check if animation is running"""
+        return self.animation_running
+
+    async def stop_async(self):
+        """Asynchronously stop the animation and cancel the task"""
+        self.stop()
+        if self.animation_task and not self.animation_task.done():
+            self.animation_task.cancel()
+            try:
+                await self.animation_task
+            except asyncio.CancelledError:
+                pass  # Ignore cancellation error
+
+
 # Create console object for output
 console = Console()
 
@@ -37,6 +89,7 @@ class SequoiaCLI:
         self.session: PromptSession | None = None
         self.console = Console()
         self.running = True
+        self.brain = Brain()
 
     def display_welcome(self):
         """Display welcome message"""
@@ -74,17 +127,53 @@ class SequoiaCLI:
         """Process command"""
         command = command.strip().lower()
 
-        if command in ["/quit", "/bye"]:
-            self.console.print("[bold red]Goodbye![/bold red]")
-            self.running = False
-        elif command == "/help":
-            self.display_help()
-        elif command == "/version":
-            self.display_version()
+        if command.startswith("/"):
+            # This is a CLI command
+            if command in ["/quit", "/bye"]:
+                self.console.print("[bold red]Goodbye![/bold red]")
+                self.running = False
+            elif command == "/help":
+                self.display_help()
+            elif command == "/version":
+                self.display_version()
+            else:
+                self.console.print(
+                    f"[red]Unknown command: {command}. Type /help for commands.[/red]"
+                )
         else:
-            self.console.print(
-                f"[red]Unknown command: {command}. Type /help for commands.[/red]"
-            )
+            # This is a user query to be processed by the brain
+            try:
+                # Create and start animation
+                animation = ThinkingAnimation()
+                animation.start()
+
+                try:
+                    # Use streaming output
+                    first_chunk = True
+                    async for chunk in self.brain.process_input_stream(command):
+                        if first_chunk:
+                            # Stop animation and clear the line
+                            # when first chunk is received
+                            await animation.stop_async()
+                            first_chunk = False
+
+                        print(chunk, end="", flush=True)
+
+                    # Ensure newline after output
+                    if not first_chunk:  # If we had output content
+                        print()  # Add newline after streaming output
+                    else:
+                        # If no content was received,
+                        # still clear animation and add newline
+                        await animation.stop_async()
+                        print()  # Add newline
+                except Exception as e:
+                    # Ensure animation stops in case of exception
+                    await animation.stop_async()
+                    raise e
+
+            except Exception as e:
+                self.console.print(f"[red]Error processing input: {str(e)}[/red]")
 
     async def run_interactive(self):
         """Run interactive CLI"""

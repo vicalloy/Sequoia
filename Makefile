@@ -18,6 +18,7 @@ shell:
 .PHONY: lint
 lint:
 	ruff check --config pyproject.toml .
+	mypy .
 
 .PHONY: lint-fix
 lint-fix:
