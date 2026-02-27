@@ -1,5 +1,8 @@
+from sequoia.cli import app
+
+
 def main():
-    print("Hello from sequoia!")
+    app()
 
 
 if __name__ == "__main__":
