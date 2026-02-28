@@ -27,3 +27,11 @@ lint-fix:
 .PHONY: format
 format:
 	ruff format --config pyproject.toml .
+
+.PHONY: test
+test:
+	pytest tests/
+
+.PHONY: test-cov
+test-cov:
+	pytest --cov=sequoia tests/
