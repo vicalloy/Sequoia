@@ -12,6 +12,7 @@ dependencies = [
     "rich>=13.0.0",
     "prompt-toolkit>=3.0.0",
     "pytz>=2022.1",
+    "pydantic-ai-slim[fastmcp]>=1.63.0",
 ]
 
 [dependency-groups]
