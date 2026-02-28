@@ -1,3 +1,5 @@
+BIN_PATH=.venv/bin
+
 init-pre-commit:
 	pre-commit install
 	pre-commit run --all-files
@@ -17,21 +19,22 @@ shell:
 
 .PHONY: lint
 lint:
-	ruff check --config pyproject.toml .
-	mypy .
+	${BIN_PATH}/mypy --install-types --non-interactive
+	${BIN_PATH}/ruff check --config pyproject.toml .
+	${BIN_PATH}/mypy .
 
 .PHONY: lint-fix
 lint-fix:
-	ruff check --config pyproject.toml --fix .
+	${BIN_PATH}/ruff check --config pyproject.toml --fix .
 
 .PHONY: format
 format:
-	ruff format --config pyproject.toml .
+	${BIN_PATH}/ruff format --config pyproject.toml .
 
 .PHONY: test
 test:
-	pytest tests/
+	${BIN_PATH}/pytest tests/
 
 .PHONY: test-cov
 test-cov:
-	pytest --cov=sequoia tests/
+	${BIN_PATH}/pytest --cov=sequoia tests/
