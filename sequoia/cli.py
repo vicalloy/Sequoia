@@ -13,41 +13,6 @@ from rich.text import Text
 
 from sequoia.brain import Brain
 
-
-class ThinkingAnimation:
-    """A class to handle thinking animation during LLM processing using rich spinner"""
-
-    def __init__(self, console: Console):
-        self.console = console
-        self.spinner = Spinner("dots", text="Thinking...")
-        self.live = Live(
-            self.spinner, console=console, refresh_per_second=10, transient=True
-        )
-        self.animation_running = False
-
-    def start(self):
-        """Start the animation"""
-        if not self.animation_running:
-            self.animation_running = True
-            self.live.start()
-
-    def stop(self):
-        """Stop the animation and clear the line"""
-        if self.animation_running:
-            self.live.stop()
-            self.animation_running = False
-
-    def is_running(self):
-        """Check if animation is running"""
-        return self.animation_running
-
-    def stop_sync(self):
-        """Synchronously stop the animation"""
-        if self.animation_running:
-            self.live.stop()
-            self.animation_running = False
-
-
 # Create console object for output
 console = Console()
 
@@ -130,18 +95,16 @@ class SequoiaCLI:
         else:
             # This is a user query to be processed by the brain
             try:
-                # Create and start animation
-                animation = ThinkingAnimation(self.console)
-                animation.start()
-
-                try:
+                # Create and start spinner animation
+                spinner = Spinner("dots", text="Thinking...")
+                with Live(
+                    spinner, console=self.console, refresh_per_second=10, transient=True
+                ):
                     # Use streaming output
                     first_chunk = True
                     async for chunk in self.brain.process_input_stream(command):
                         if first_chunk:
-                            # Stop animation and clear the line
-                            # when first chunk is received
-                            animation.stop_sync()
+                            # Animation stops when exiting the 'with' block
                             first_chunk = False
 
                         print(chunk, end="", flush=True)
@@ -150,14 +113,8 @@ class SequoiaCLI:
                     if not first_chunk:  # If we had output content
                         print()  # Add newline after streaming output
                     else:
-                        # If no content was received,
-                        # still clear animation and add newline
-                        animation.stop_sync()
+                        # If no content was received, still add newline
                         print()  # Add newline
-                except Exception as e:
-                    # Ensure animation stops in case of exception
-                    animation.stop_sync()
-                    raise e
 
             except Exception as e:
                 self.console.print(f"[red]Error processing input: {str(e)}[/red]")
