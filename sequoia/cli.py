@@ -12,13 +12,14 @@ from rich.spinner import Spinner
 from rich.text import Text
 
 from sequoia.brain import Brain
+from sequoia.memory import Memory
 
 # Create console object for output
 console = Console()
 
 # Define command completer
 command_completer = WordCompleter(
-    ["/help", "/quit", "/bye", "/version"], ignore_case=True
+    ["/help", "/quit", "/bye", "/version", "/history", "/clear"], ignore_case=True
 )
 
 # Define styles
@@ -41,7 +42,8 @@ class SequoiaCLI:
         self.session: PromptSession | None = None
         self.console = Console()
         self.running = True
-        self.brain = Brain()
+        self.memory = Memory()
+        self.brain = Brain(memory=self.memory)
 
     def display_welcome(self):
         """Display welcome message"""
@@ -58,6 +60,8 @@ class SequoiaCLI:
             "[bold]Available Commands:[/bold]\n"
             "  [green]/help[/green]     - Show this help message\n"
             "  [green]/version[/green]  - Show version information\n"
+            "  [green]/history[/green]  - Show conversation history\n"
+            "  [green]/clear[/green]    - Clear conversation history\n"
             "  [green]/quit[/green]     - Quit the application\n"
             "  [green]/bye[/green]      - Quit the application\n\n"
             "[bold]CLI Options:[/bold]\n"
@@ -88,6 +92,18 @@ class SequoiaCLI:
                 self.display_help()
             elif command == "/version":
                 self.display_version()
+            elif command == "/history":
+                history_summary = self.memory.get_history_summary()
+                self.console.print(
+                    Panel(
+                        history_summary,
+                        title="Conversation History",
+                        border_style="blue",
+                    )
+                )
+            elif command == "/clear":
+                self.memory.clear_history()
+                self.console.print("[green]Conversation history cleared.[/green]")
             else:
                 self.console.print(
                     f"[red]Unknown command: {command}. Type /help for commands.[/red]"
