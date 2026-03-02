@@ -20,7 +20,9 @@ class ThinkingAnimation:
     def __init__(self, console: Console):
         self.console = console
         self.spinner = Spinner("dots", text="Thinking...")
-        self.live = Live(self.spinner, console=console, refresh_per_second=10)
+        self.live = Live(
+            self.spinner, console=console, refresh_per_second=10, transient=True
+        )
         self.animation_running = False
 
     def start(self):
@@ -34,9 +36,6 @@ class ThinkingAnimation:
         if self.animation_running:
             self.live.stop()
             self.animation_running = False
-            # Clear the line with spaces and return cursor to start
-            self.console.file.write("\r" + " " * 30 + "\r")  # Clear line
-            self.console.file.flush()
 
     def is_running(self):
         """Check if animation is running"""
