@@ -7,30 +7,34 @@ from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.styles import Style
 from rich.console import Console
 from rich.panel import Panel
+from rich.spinner import Spinner
 from rich.text import Text
 
 from sequoia.brain import Brain
 
 
 class ThinkingAnimation:
-    """A class to handle the thinking animation during LLM processing"""
+    """A class to handle thinking animation during LLM processing using rich spinner"""
 
-    def __init__(self):
-        self.animation_chars = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+    def __init__(self, console: Console):
+        self.console = console
+        self.spinner = Spinner("dots", text="Thinking...")
         self.animation_running = False
         self.animation_task = None
 
     async def _animate(self):
         """Internal method to run the animation"""
-        i = 0
+        time = 0
         while self.animation_running:
-            # Use sys.stdout.write to update the same line with animation
-            sys.stdout.write(
-                f"\r{self.animation_chars[i % len(self.animation_chars)]} Thinking..."
-            )
-            sys.stdout.flush()
-            i += 1
+            # Render the spinner frame for the current time
+            frame = self.spinner.render(time)
+            # Print the spinner frame to the console
+            self.console.print(frame, end="", flush=True)
+            time += 0.1
             await asyncio.sleep(0.1)
+            # Clear the previous frame (move cursor back and overwrite with spaces)
+            self.console.file.write("\r" + " " * 30 + "\r")
+            self.console.file.flush()
 
     def start(self):
         """Start the animation"""
@@ -43,8 +47,8 @@ class ThinkingAnimation:
         if self.animation_running:
             self.animation_running = False
             # Clear the line with spaces and return cursor to start
-            sys.stdout.write("\r" + " " * 30 + "\r")  # Clear approximately 30 chars
-            sys.stdout.flush()
+            self.console.file.write("\r" + " " * 30 + "\r")  # Clear line
+            self.console.file.flush()
 
     def is_running(self):
         """Check if animation is running"""
@@ -144,7 +148,7 @@ class SequoiaCLI:
             # This is a user query to be processed by the brain
             try:
                 # Create and start animation
-                animation = ThinkingAnimation()
+                animation = ThinkingAnimation(self.console)
                 animation.start()
 
                 try:
