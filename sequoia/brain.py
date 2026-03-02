@@ -13,6 +13,15 @@ class Brain:
         self.agent = Agent(
             model="ollama:qwen3:8b",
             tools=[get_current_time, get_current_timestamp, get_timezone_list],
+            # https://ai.pydantic.dev/mcp/fastmcp-client/#usage
+            toolsets=[
+                # FastMCPToolset('http://localhost:8000/mcp')
+                # FastMCPToolset(
+                #     fastmcp.StdioTransport(
+                #         command='python', args=['mcp_server.py']
+                #     )
+                # )
+            ],
         )
 
     async def process_input(self, user_input: str) -> str:
