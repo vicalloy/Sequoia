@@ -1,6 +1,7 @@
 from collections.abc import AsyncGenerator
 
 from pydantic_ai import Agent, PartDeltaEvent, PartEndEvent, PartStartEvent
+from pydantic_ai_skills import SkillsToolset
 
 from .tools import get_current_time, get_current_timestamp, get_timezone_list
 
@@ -15,6 +16,7 @@ class Brain:
             tools=[get_current_time, get_current_timestamp, get_timezone_list],
             # https://ai.pydantic.dev/mcp/fastmcp-client/#usage
             toolsets=[
+                SkillsToolset(),
                 # FastMCPToolset('http://localhost:8000/mcp')
                 # FastMCPToolset(
                 #     fastmcp.StdioTransport(
