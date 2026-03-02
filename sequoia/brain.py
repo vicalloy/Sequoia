@@ -1,9 +1,16 @@
 from collections.abc import AsyncGenerator
 
-from pydantic_ai import Agent, PartDeltaEvent, PartEndEvent, PartStartEvent
+from pydantic_ai import Agent, PartDeltaEvent, PartEndEvent, PartStartEvent, RunContext
 from pydantic_ai_skills import SkillsToolset
 
 from .tools import get_current_time, get_current_timestamp, get_timezone_list
+
+skills_toolset = SkillsToolset(directories=["./skills"])
+
+
+async def add_skills(ctx: RunContext) -> str | None:
+    """Add skills instructions to the agent's context."""
+    return await skills_toolset.get_instructions(ctx)
 
 
 class Brain:
@@ -16,7 +23,7 @@ class Brain:
             tools=[get_current_time, get_current_timestamp, get_timezone_list],
             # https://ai.pydantic.dev/mcp/fastmcp-client/#usage
             toolsets=[
-                SkillsToolset(),
+                skills_toolset,
                 # FastMCPToolset('http://localhost:8000/mcp')
                 # FastMCPToolset(
                 #     fastmcp.StdioTransport(
@@ -25,6 +32,7 @@ class Brain:
                 # )
             ],
         )
+        self.agent.instructions(add_skills)
 
     async def process_input(self, user_input: str) -> str:
         result = await self.agent.run(user_input)
