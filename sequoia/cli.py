@@ -94,29 +94,22 @@ class SequoiaCLI:
                 )
         else:
             # This is a user query to be processed by the brain
+            spinner = Spinner("dots", text="Thinking...")
+            live = Live(
+                spinner, console=self.console, refresh_per_second=10, transient=True
+            )
             try:
                 # Create and start spinner animation
-                spinner = Spinner("dots", text="Thinking...")
-                with Live(
-                    spinner, console=self.console, refresh_per_second=10, transient=True
-                ):
-                    # Use streaming output
-                    first_chunk = True
-                    async for chunk in self.brain.process_input_stream(command):
-                        if first_chunk:
-                            # Animation stops when exiting the 'with' block
-                            first_chunk = False
-
-                        print(chunk, end="", flush=True)
-
-                    # Ensure newline after output
-                    if not first_chunk:  # If we had output content
-                        print()  # Add newline after streaming output
-                    else:
-                        # If no content was received, still add newline
-                        print()  # Add newline
+                live.start()
+                # Use streaming output
+                async for chunk in self.brain.process_input_stream(command):
+                    if live.is_started:
+                        live.stop()
+                    print(chunk, end="", flush=True)
 
             except Exception as e:
+                if live.is_started:
+                    live.stop()
                 self.console.print(f"[red]Error processing input: {str(e)}[/red]")
 
     async def run_interactive(self):
