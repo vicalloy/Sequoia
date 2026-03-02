@@ -6,6 +6,7 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.styles import Style
 from rich.console import Console
+from rich.live import Live
 from rich.panel import Panel
 from rich.spinner import Spinner
 from rich.text import Text
@@ -19,32 +20,19 @@ class ThinkingAnimation:
     def __init__(self, console: Console):
         self.console = console
         self.spinner = Spinner("dots", text="Thinking...")
+        self.live = Live(self.spinner, console=console, refresh_per_second=10)
         self.animation_running = False
-        self.animation_task = None
-
-    async def _animate(self):
-        """Internal method to run the animation"""
-        time = 0
-        while self.animation_running:
-            # Render the spinner frame for the current time
-            frame = self.spinner.render(time)
-            # Print the spinner frame to the console
-            self.console.print(frame, end="", flush=True)
-            time += 0.1
-            await asyncio.sleep(0.1)
-            # Clear the previous frame (move cursor back and overwrite with spaces)
-            self.console.file.write("\r" + " " * 30 + "\r")
-            self.console.file.flush()
 
     def start(self):
         """Start the animation"""
         if not self.animation_running:
             self.animation_running = True
-            self.animation_task = asyncio.create_task(self._animate())
+            self.live.start()
 
     def stop(self):
         """Stop the animation and clear the line"""
         if self.animation_running:
+            self.live.stop()
             self.animation_running = False
             # Clear the line with spaces and return cursor to start
             self.console.file.write("\r" + " " * 30 + "\r")  # Clear line
@@ -54,15 +42,11 @@ class ThinkingAnimation:
         """Check if animation is running"""
         return self.animation_running
 
-    async def stop_async(self):
-        """Asynchronously stop the animation and cancel the task"""
-        self.stop()
-        if self.animation_task and not self.animation_task.done():
-            self.animation_task.cancel()
-            try:
-                await self.animation_task
-            except asyncio.CancelledError:
-                pass  # Ignore cancellation error
+    def stop_sync(self):
+        """Synchronously stop the animation"""
+        if self.animation_running:
+            self.live.stop()
+            self.animation_running = False
 
 
 # Create console object for output
@@ -158,7 +142,7 @@ class SequoiaCLI:
                         if first_chunk:
                             # Stop animation and clear the line
                             # when first chunk is received
-                            await animation.stop_async()
+                            animation.stop_sync()
                             first_chunk = False
 
                         print(chunk, end="", flush=True)
@@ -169,11 +153,11 @@ class SequoiaCLI:
                     else:
                         # If no content was received,
                         # still clear animation and add newline
-                        await animation.stop_async()
+                        animation.stop_sync()
                         print()  # Add newline
                 except Exception as e:
                     # Ensure animation stops in case of exception
-                    await animation.stop_async()
+                    animation.stop_sync()
                     raise e
 
             except Exception as e:
