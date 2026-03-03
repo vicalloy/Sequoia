@@ -8,7 +8,7 @@ _safe_directory = "./memory"
 
 def _validate_path(path: str | Path) -> Path:
     """
-    Validate that the given path is within the memory directory.
+    Validate that the given path is safe.
 
     Args:
         path: Path to validate
@@ -16,7 +16,7 @@ def _validate_path(path: str | Path) -> Path:
     Returns:
         Path object if valid
     """
-    # Check if the path is within the memory directory
+    # Check if the path is within the safe directory
     path = Path(path)
     if not path.resolve().is_relative_to(Path(_safe_directory).resolve()):
         error_msg = f"Path {path} is not within the allowed directory."
@@ -26,7 +26,7 @@ def _validate_path(path: str | Path) -> Path:
 
 def _validate_write_path(path: str | Path) -> Path:
     """
-    Validate that the given path is within the memory directory for write operations.
+    Validate that the given path is within the safe directory for write operations.
 
     Args:
         path: Path to validate
@@ -44,10 +44,10 @@ def _validate_write_path(path: str | Path) -> Path:
 
 async def read_file(file_path: str) -> str:
     """
-    Read the contents of a file within the memory directory.
+    Read the contents of a file.
 
     Args:
-        file_path: Path to the file to read (relative to memory directory)
+        file_path: Path to the file to read
 
     Returns:
         File contents as a string, or an error message
@@ -63,10 +63,10 @@ async def read_file(file_path: str) -> str:
 
 async def write_file(file_path: str, content: str) -> str:
     """
-    Write content to a file within the memory directory.
+    Write content to a file.
 
     Args:
-        file_path: Path to the file to write (relative to memory directory)
+        file_path: Path to the file to write
         content: Content to write to the file
 
     Returns:
@@ -82,10 +82,10 @@ async def write_file(file_path: str, content: str) -> str:
 
 async def create_directory(dir_path: str) -> str:
     """
-    Create a directory within the memory directory.
+    Create a directory.
 
     Args:
-        dir_path: Path to the directory to create (relative to memory directory)
+        dir_path: Path to the directory to create
 
     Returns:
         Success message or an error message
@@ -100,10 +100,10 @@ async def create_directory(dir_path: str) -> str:
 
 async def delete_file(file_path: str) -> str:
     """
-    Delete a file within the memory directory.
+    Delete a file.
 
     Args:
-        file_path: Path to the file to delete (relative to memory directory)
+        file_path: Path to the file to delete
 
     Returns:
         Success message or an error message
