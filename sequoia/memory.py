@@ -9,6 +9,16 @@ from pydantic_ai import TextPart, UserPromptPart
 from pydantic_ai.messages import ModelRequest, ModelResponse
 
 
+def as_pydantic_ai_messages(role: str, content: str):
+    if role == "user":
+        return ModelRequest(parts=[UserPromptPart(content=content)])
+    if role == "system":
+        return ModelResponse(parts=[TextPart(content=content)])
+    if role == "assistant":
+        return ModelResponse(parts=[TextPart(content=content)])
+    return None
+
+
 class Memory:
     """Memory class for handling conversation history in Sequoia."""
 
@@ -87,19 +97,10 @@ class Memory:
             List of Pydantic AI message objects
         """
 
-        history = self.get_history(limit)
         messages = []
-        for item in history:
-            if item["role"] == "user":
-                # Create ModelRequest with UserPromptPart
-                messages.append(
-                    ModelRequest(parts=[UserPromptPart(content=item["content"])])
-                )
-            elif item["role"] == "assistant":
-                # Create ModelResponse with TextPart
-                messages.append(
-                    ModelResponse(parts=[TextPart(content=item["content"])])
-                )
+        for item in self.get_history(limit):
+            if message := as_pydantic_ai_messages(item["role"], item["content"]):
+                messages.append(message)
         return messages
 
     def clear_history(self) -> None:

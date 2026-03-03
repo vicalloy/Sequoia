@@ -57,6 +57,7 @@ class Brain:
             # Register tools with the agent
             self.agent = Agent(
                 model=get_ai_model(),
+                system_prompt="",
                 tools=[get_current_time, get_current_timestamp, get_timezone_list],
                 # https://ai.pydantic.dev/mcp/fastmcp-client/#usage
                 toolsets=[
