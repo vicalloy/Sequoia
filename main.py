@@ -21,7 +21,7 @@ def setup_logfire():
 
 def main():
     load_dotenv()
-    setup_logfire()
+    # setup_logfire()
     app()
 
 
