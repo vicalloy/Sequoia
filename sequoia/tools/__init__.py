@@ -18,7 +18,6 @@ __all__ = [
     "write_file",
     "create_directory",
     "delete_file",
-    "list_directory",
     "tools",
 ]
 

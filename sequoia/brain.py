@@ -61,26 +61,31 @@ class Brain:
     def add_memory_message(self, role: str, content: str):
         return self.memory.add_message(role, content)
 
-    def __init__(self, memory: Memory | None = None):
+    def __init__(self, memory: Memory | None = None, agent=None):
         self.memory = memory if memory else Memory(memory_dir="./memory")
         self.memory.clear_history()
-        # Register tools with the agent
-        self.agent = Agent(
-            model=get_ai_model(),
-            system_prompt="",
-            tools=tools,
-            # https://ai.pydantic.dev/mcp/fastmcp-client/#usage
-            toolsets=[
-                skills_toolset,
-                # FastMCPToolset('http://localhost:8000/mcp')
-                # FastMCPToolset(
-                #     fastmcp.StdioTransport(
-                #         command='python', args=['mcp_server.py']
-                #     )
-                # )
-            ],
-        )
-        self.agent.instructions(add_skills)
+
+        if agent is not None:
+            # Use provided agent (for testing purposes)
+            self.agent = agent
+        else:
+            # Register tools with the agent
+            self.agent = Agent(
+                model=get_ai_model(),
+                system_prompt="",
+                tools=tools,
+                # https://ai.pydantic.dev/mcp/fastmcp-client/#usage
+                toolsets=[
+                    skills_toolset,
+                    # FastMCPToolset('http://localhost:8000/mcp')
+                    # FastMCPToolset(
+                    #     fastmcp.StdioTransport(
+                    #         command='python', args=['mcp_server.py']
+                    #     )
+                    # )
+                ],
+            )
+            self.agent.instructions(add_skills)
 
     async def process_input(self, user_input: str) -> str:
         message_history = self.get_memory_message()
