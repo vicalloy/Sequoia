@@ -12,7 +12,6 @@ from rich.spinner import Spinner
 from rich.text import Text
 
 from sequoia.brain import Brain
-from sequoia.memory import Memory
 
 # Create console object for output
 console = Console()
@@ -42,8 +41,7 @@ class SequoiaCLI:
         self.session: PromptSession | None = None
         self.console = Console()
         self.running = True
-        self.memory = Memory()
-        self.brain = Brain(memory=self.memory)
+        self.brain = Brain()
 
     def display_welcome(self):
         """Display welcome message"""
@@ -93,7 +91,7 @@ class SequoiaCLI:
             elif command == "/version":
                 self.display_version()
             elif command == "/history":
-                history_summary = self.memory.get_history_summary()
+                history_summary = self.brain.memory.get_history_summary()
                 self.console.print(
                     Panel(
                         history_summary,
@@ -102,7 +100,7 @@ class SequoiaCLI:
                     )
                 )
             elif command == "/clear":
-                self.memory.clear_history()
+                self.brain.memory.clear_history()
                 self.console.print("[green]Conversation history cleared.[/green]")
             else:
                 self.console.print(

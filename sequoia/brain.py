@@ -1,3 +1,4 @@
+import os
 from collections.abc import AsyncGenerator
 
 from pydantic_ai import (
@@ -8,6 +9,8 @@ from pydantic_ai import (
     RunContext,
 )
 from pydantic_ai.exceptions import UserError
+from pydantic_ai.models.openai import Model, OpenAIChatModel
+from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai_skills import SkillsToolset
 
 from sequoia.memory import Memory
@@ -22,25 +25,38 @@ async def add_skills(ctx: RunContext) -> str | None:
     return await skills_toolset.get_instructions(ctx)
 
 
+def get_ai_model() -> Model | str:
+    if os.getenv("OPENAI_API_KEY"):
+        provider = OpenAIProvider(
+            base_url=os.getenv("OPENAI_BASE_URL"),
+            api_key=os.getenv("OPENAI_API_KEY"),
+        )
+        model = OpenAIChatModel(
+            model_name=os.getenv("OPENAI_MODEL", ""), provider=provider
+        )
+        return model
+    if os.getenv("OLLAMA_MODEL"):
+        name = os.getenv("OLLAMA_MODEL", "qwen3:8b")
+        return f"ollama:{name}"
+    return ""
+
+
 class Brain:
     """Central scheduler for handling user input, LLM processing, and tool execution."""
 
     def get_memory_message(self):
-        if not self.memory:
-            return []
         return self.memory.get_pydantic_ai_messages()
 
     def add_memory_message(self, role: str, content: str):
-        if not self.memory:
-            return None
         return self.memory.add_message(role, content)
 
     def __init__(self, memory: Memory | None = None):
-        self.memory = memory
+        self.memory = memory if memory else Memory(memory_dir="./memory")
+        self.memory.clear_history()
         try:
             # Register tools with the agent
             self.agent = Agent(
-                model="ollama:qwen3:8b",
+                model=get_ai_model(),
                 tools=[get_current_time, get_current_timestamp, get_timezone_list],
                 # https://ai.pydantic.dev/mcp/fastmcp-client/#usage
                 toolsets=[
@@ -65,9 +81,10 @@ class Brain:
             error_msg = "Error: Ollama not initialized. Check if Ollama is running."
             return error_msg
 
+        message_history = self.get_memory_message()
         self.add_memory_message("user", user_input)
         result = await self.agent.run(
-            user_prompt=user_input, message_history=self.get_memory_message()
+            user_prompt=user_input, message_history=message_history
         )
 
         # Add assistant response to memory if available
@@ -80,15 +97,15 @@ class Brain:
             if self.agent is None:
                 error_msg = "Error: Ollama not initialized. Check if Ollama is running."
                 # Add user message to memory if available
-                yield error_msg
+                yield f"{error_msg}\n"
                 return
-
-            self.add_memory_message("user", user_input)
 
             # Use run_stream_events method to get streaming events
             try:
+                message_history = self.get_memory_message()
+                self.add_memory_message("user", user_input)
                 async for event in self.agent.run_stream_events(
-                    user_prompt=user_input, message_history=self.get_memory_message()
+                    user_prompt=user_input, message_history=message_history
                 ):
                     # Handle different event types appropriately
                     if isinstance(event, PartStartEvent):
