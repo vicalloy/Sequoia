@@ -7,7 +7,7 @@ import os
 os.environ.setdefault("OLLAMA_BASE_URL", "http://localhost:11434/v1")
 
 from pydantic_ai import AgentRunResult, PartDeltaEvent, PartEndEvent, PartStartEvent
-from pydantic_ai.messages import ContentPart
+from pydantic_ai.messages import TextPart
 
 from sequoia.brain import Brain
 from sequoia.memory import Memory
@@ -39,11 +39,11 @@ class FakeAgent:
         """Fake run_stream_events that yields some events."""
 
         # Yield a start event
-        yield PartStartEvent(part=ContentPart(content="Fake thinking..."))
+        yield PartStartEvent(part=TextPart(content="Fake thinking..."))
         # Yield a delta event
-        yield PartDeltaEvent(delta=ContentPart(content="Processing..."))
+        yield PartDeltaEvent(delta=TextPart(content="Processing..."))
         # Yield an end event
-        yield PartEndEvent(part=ContentPart(content=f"Fake response to: {user_prompt}"))
+        yield PartEndEvent(part=TextPart(content=f"Fake response to: {user_prompt}"))
 
 
 class TestBrain:

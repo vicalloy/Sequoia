@@ -61,8 +61,14 @@ class Brain:
     def add_memory_message(self, role: str, content: str):
         return self.memory.add_message(role, content)
 
-    def __init__(self, memory: Memory | None = None, agent=None):
-        self.memory = memory if memory else Memory(memory_dir="./memory")
+    def __init__(
+        self, memory: Memory | None = None, agent=None, persist_memory: bool = False
+    ):
+        self.memory = (
+            memory
+            if memory
+            else Memory(memory_dir="./memory", persist_to_json=persist_memory)
+        )
         self.memory.clear_history()
 
         if agent is not None:

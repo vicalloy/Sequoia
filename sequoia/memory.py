@@ -22,21 +22,24 @@ def as_pydantic_ai_messages(role: str, content: str):
 class Memory:
     """Memory class for handling conversation history in Sequoia."""
 
-    def __init__(self, memory_dir: str = "./memory"):
+    def __init__(self, memory_dir: str = "./memory", persist_to_json: bool = False):
         """
         Initialize the memory system.
 
         Args:
             memory_dir: Directory to store memory files
+            persist_to_json: Whether to persist conversation history to JSON file
+                             (default: False)
         """
         self.memory_dir = memory_dir
+        self.persist_to_json = persist_to_json
         os.makedirs(memory_dir, exist_ok=True)
         self.history_file = os.path.join(memory_dir, "history.json")
-        self.history = self._load_history()
+        self.history = self._load_history() if persist_to_json else []
 
     def _load_history(self) -> list[dict[str, Any]]:
         """Load conversation history from file."""
-        if os.path.exists(self.history_file):
+        if self.persist_to_json and os.path.exists(self.history_file):
             try:
                 with open(self.history_file, encoding="utf-8") as f:
                     return json.load(f)
@@ -46,8 +49,9 @@ class Memory:
 
     def _save_history(self) -> None:
         """Save conversation history to file."""
-        with open(self.history_file, "w", encoding="utf-8") as f:
-            json.dump(self.history, f, ensure_ascii=False, indent=2)
+        if self.persist_to_json:
+            with open(self.history_file, "w", encoding="utf-8") as f:
+                json.dump(self.history, f, ensure_ascii=False, indent=2)
 
     def add_message(self, role: str, content: str) -> None:
         """
@@ -72,26 +76,28 @@ class Memory:
         for message in messages:
             self.add_message(message["role"], message["content"])
 
-    def get_history(self, limit: int | None = None) -> list[dict[str, Any]]:
+    def get_history(self, limit: int | None = 10) -> list[dict[str, Any]]:
         """
         Get conversation history.
 
         Args:
-            limit: Optional limit on number of messages to return (recent first)
+            limit: Limit on number of messages to return (recent first).
+                   Default is 10, use None for all messages.
 
         Returns:
             List of conversation messages
         """
-        if limit:
-            return self.history[-limit:]
-        return self.history.copy()
+        if limit is None:
+            return self.history.copy()
+        return self.history[-limit:]
 
-    def get_pydantic_ai_messages(self, limit: int | None = None) -> list:
+    def get_pydantic_ai_messages(self, limit: int | None = 10) -> list:
         """
         Get conversation history as Pydantic AI messages.
 
         Args:
-            limit: Optional limit on number of messages to return (recent first)
+            limit: Limit on number of messages to return (recent first).
+                   Default is 10, use None for all messages.
 
         Returns:
             List of Pydantic AI message objects
@@ -108,12 +114,13 @@ class Memory:
         self.history = []
         self._save_history()
 
-    def get_history_summary(self, limit: int = 10) -> str:
+    def get_history_summary(self, limit: int | None = 10) -> str:
         """
         Get a formatted summary of recent conversation history.
 
         Args:
-            limit: Number of recent messages to include
+            limit: Number of recent messages to include.
+                   Default is 10, use None for all messages.
 
         Returns:
             Formatted string of conversation history
@@ -123,7 +130,7 @@ class Memory:
             return "No conversation history available."
 
         summary_lines = ["Recent Conversation History:"]
-        for i, msg in enumerate(history[-limit:], 1):
+        for i, msg in enumerate(history, 1):
             role = msg["role"].capitalize()
             timestamp = msg["timestamp"][:19]  # Get just the datetime part
             content = (
