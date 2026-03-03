@@ -15,9 +15,8 @@ from pydantic_ai.models.openai import Model, OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai_skills import SkillsToolset
 
-from sequoia.memory import Memory
-
-from .tools import get_current_time, get_current_timestamp, get_timezone_list
+from .memory import Memory
+from .tools import tools
 
 
 class OutputDataType(str, Enum):
@@ -71,7 +70,7 @@ class Brain:
             self.agent = Agent(
                 model=get_ai_model(),
                 system_prompt="",
-                tools=[get_current_time, get_current_timestamp, get_timezone_list],
+                tools=tools,
                 # https://ai.pydantic.dev/mcp/fastmcp-client/#usage
                 toolsets=[
                     skills_toolset,
@@ -156,6 +155,6 @@ class Brain:
                         else:
                             yield OutputDataType.END, "\n"
             except Exception as e:
-                yield OutputDataType.ERROR, f"Error: {str(e)}"
+                yield OutputDataType.ERROR, f"Error: {str(e)}\n"
 
         return _process_stream()

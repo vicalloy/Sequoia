@@ -1,4 +1,4 @@
-"""Tools for the Sequoia AI agent."""
+"""Time-related tools for the Sequoia AI agent."""
 
 import time
 from datetime import datetime

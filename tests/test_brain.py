@@ -7,7 +7,11 @@ import os
 os.environ.setdefault("OLLAMA_BASE_URL", "http://localhost:11434/v1")
 
 from sequoia.brain import Brain
-from sequoia.tools import get_current_time, get_current_timestamp, get_timezone_list
+from sequoia.tools.time_tools import (
+    get_current_time,
+    get_current_timestamp,
+    get_timezone_list,
+)
 
 
 class TestBrain:
