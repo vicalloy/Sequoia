@@ -82,58 +82,81 @@ class SequoiaCLI:
         command = command.strip().lower()
 
         if command.startswith("/"):
-            # This is a CLI command
-            if command in ["/quit", "/bye"]:
-                self.console.print("[bold red]Goodbye![/bold red]")
-                self.running = False
-            elif command == "/help":
-                self.display_help()
-            elif command == "/version":
-                self.display_version()
-            elif command == "/history":
-                history_summary = self.brain.memory.get_history_summary()
-                self.console.print(
-                    Panel(
-                        history_summary,
-                        title="Conversation History",
-                        border_style="blue",
-                    )
-                )
-            elif command == "/clear":
-                self.brain.memory.clear_history()
-                self.console.print("[green]Conversation history cleared.[/green]")
-            else:
-                self.console.print(
-                    f"[red]Unknown command: {command}. Type /help for commands.[/red]"
-                )
+            await self._handle_cli_command(command)
         else:
-            # This is a user query to be processed by the brain
-            spinner = Spinner("dots", text="Thinking...")
-            live = Live(
-                spinner, console=self.console, refresh_per_second=10, transient=True
-            )
-            try:
-                # Create and start spinner animation
-                live.start()
-                # Use streaming output
-                async for data_type, chunk in self.brain.process_input_stream(command):
-                    style: str | None = None
-                    text = chunk
-                    if data_type in [
-                        OutputDataType.THINKING,
-                        OutputDataType.THINKING_END,
-                    ]:
-                        style = "dim"
-                    if data_type == OutputDataType.THINKING_END:
-                        text = f"\n{'-' * 50}\n"
-                    if live.is_started:
-                        live.stop()
-                    console.print(text, end="", style=style)
+            await self._handle_llm_dialogue(command)
 
-            except Exception as e:
+    async def _handle_cli_command(self, command: str):
+        """Handle CLI commands that start with /"""
+        command_handlers = {
+            "/quit": self._quit_command,
+            "/bye": self._quit_command,
+            "/help": self.display_help,
+            "/version": self.display_version,
+            "/history": self._history_command,
+            "/clear": self._clear_command,
+        }
+
+        handler = command_handlers.get(command)
+        if handler:
+            if command in ["/quit", "/bye"]:
+                handler()
+            else:
+                handler()
+        else:
+            self.console.print(
+                f"[red]Unknown command: {command}. Type /help for commands.[/red]"
+            )
+
+    def _quit_command(self):
+        """Handle quit/bye commands"""
+        self.console.print("[bold red]Goodbye![/bold red]")
+        self.running = False
+
+    def _history_command(self):
+        """Handle history command"""
+        history_summary = self.brain.memory.get_history_summary()
+        self.console.print(
+            Panel(
+                history_summary,
+                title="Conversation History",
+                border_style="blue",
+            )
+        )
+
+    def _clear_command(self):
+        """Handle clear command"""
+        self.brain.memory.clear_history()
+        self.console.print("[green]Conversation history cleared.[/green]")
+
+    async def _handle_llm_dialogue(self, command: str):
+        """Handle user queries to be processed by the LLM"""
+        spinner = Spinner("dots", text="Thinking...")
+        live = Live(
+            spinner, console=self.console, refresh_per_second=10, transient=True
+        )
+        try:
+            # Create and start spinner animation
+            live.start()
+            # Use streaming output
+            async for data_type, chunk in self.brain.process_input_stream(command):
+                style: str | None = None
+                text = chunk
+                if data_type in [
+                    OutputDataType.THINKING,
+                    OutputDataType.THINKING_END,
+                ]:
+                    style = "dim"
+                if data_type == OutputDataType.THINKING_END:
+                    text = f"\n{'-' * 50}\n"
                 if live.is_started:
                     live.stop()
-                self.console.print(f"[red]Error processing input: {str(e)}[/red]")
+                console.print(text, end="", style=style)
+
+        except Exception as e:
+            if live.is_started:
+                live.stop()
+            self.console.print(f"[red]Error processing input: {str(e)}[/red]")
 
     async def run_interactive(self):
         """Run interactive CLI"""
