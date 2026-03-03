@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 from typing import Any
 
-from pydantic_ai import TextPart, UserPromptPart
+from pydantic_ai import SystemPromptPart, TextPart, UserPromptPart
 from pydantic_ai.messages import ModelRequest, ModelResponse
 
 
@@ -13,7 +13,7 @@ def as_pydantic_ai_messages(role: str, content: str):
     if role == "user":
         return ModelRequest(parts=[UserPromptPart(content=content)])
     if role == "system":
-        return ModelResponse(parts=[TextPart(content=content)])
+        return ModelRequest(parts=[SystemPromptPart(content=content)])
     if role == "assistant":
         return ModelResponse(parts=[TextPart(content=content)])
     return None
