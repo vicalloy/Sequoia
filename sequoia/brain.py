@@ -7,6 +7,7 @@ from pydantic_ai import (
     PartEndEvent,
     PartStartEvent,
     RunContext,
+    ThinkingPart,
 )
 from pydantic_ai.exceptions import UserError
 from pydantic_ai.models.openai import Model, OpenAIChatModel
@@ -93,32 +94,39 @@ class Brain:
 
         return result.output
 
-    def process_input_stream(self, user_input: str) -> AsyncGenerator[str, None]:
+    def process_input_stream(
+        self, user_input: str
+    ) -> AsyncGenerator[tuple[str, str], None]:
         async def _process_stream():
             if self.agent is None:
                 error_msg = "Error: Ollama not initialized. Check if Ollama is running."
                 # Add user message to memory if available
-                yield f"{error_msg}\n"
+                yield "error", f"{error_msg}\n"
                 return
 
             # Use run_stream_events method to get streaming events
             try:
                 message_history = self.get_memory_message()
                 self.add_memory_message("user", user_input)
+                data_type = "content"
                 async for event in self.agent.run_stream_events(
                     user_prompt=user_input, message_history=message_history
                 ):
                     # Handle different event types appropriately
                     if isinstance(event, PartStartEvent):
+                        part = event.part
                         # Handle different part types
+                        data_type = (
+                            "thinking" if isinstance(part, ThinkingPart) else "content"
+                        )
                         if hasattr(event.part, "content"):
-                            yield event.part.content
+                            yield data_type, event.part.content
                         else:
                             continue
                     elif isinstance(event, PartDeltaEvent):
                         # Handle content deltas
                         if hasattr(event.delta, "content_delta"):
-                            yield event.delta.content_delta
+                            yield data_type, event.delta.content_delta
                         else:
                             # For tool call deltas, we don't yield anything to the user
                             continue
@@ -130,8 +138,8 @@ class Brain:
                             and hasattr(event.part, "content")
                         ):
                             self.add_memory_message("assistant", event.part.content)
-                        yield "\n"
+                        yield "thinking-end" if data_type == "thinking" else "end", "\n"
             except Exception as e:
-                yield f"Error: {str(e)}"
+                yield "error", f"Error: {str(e)}"
 
         return _process_stream()

@@ -116,10 +116,16 @@ class SequoiaCLI:
                 # Create and start spinner animation
                 live.start()
                 # Use streaming output
-                async for chunk in self.brain.process_input_stream(command):
+                async for data_type, chunk in self.brain.process_input_stream(command):
+                    style: str | None = None
+                    text = chunk
+                    if data_type in ["thinking", "thinking-end"]:
+                        style = "dim"
+                    if data_type == "thinking-end":
+                        text = f"\n{'-' * 50}\n"
                     if live.is_started:
                         live.stop()
-                    print(chunk, end="", flush=True)
+                    console.print(text, end="", style=style)
 
             except Exception as e:
                 if live.is_started:
