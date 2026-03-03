@@ -34,23 +34,34 @@ style = Style.from_dict(
 app = typer.Typer(add_completion=False)
 
 
-class SequoiaCLI:
-    """Sequoia Interactive CLI Class"""
+class CLICommandHandler:
+    """Handles CLI commands that start with /"""
 
-    def __init__(self):
-        self.session: PromptSession | None = None
-        self.console = Console()
+    def __init__(self, console: Console, brain: Brain):
+        self.console = console
+        self.brain = brain
         self.running = True
-        self.brain = Brain()
 
-    def display_welcome(self):
-        """Display welcome message"""
-        welcome_text = Text.from_markup(
-            "[bold blue]Welcome to Sequoia CLI![/bold blue]\n"
-            "[italic]An AI-powered command line interface[/italic]\n"
-            "Type [bold]/help[/bold] for commands or [bold]/quit[/bold] to exit.\n"
+    def _quit_command(self):
+        """Handle quit/bye commands"""
+        self.console.print("[bold red]Goodbye![/bold red]")
+        self.running = False
+
+    def _history_command(self):
+        """Handle history command"""
+        history_summary = self.brain.memory.get_history_summary()
+        self.console.print(
+            Panel(
+                history_summary,
+                title="Conversation History",
+                border_style="blue",
+            )
         )
-        self.console.print(Panel(welcome_text, border_style="blue"))
+
+    def _clear_command(self):
+        """Handle clear command"""
+        self.brain.memory.clear_history()
+        self.console.print("[green]Conversation history cleared.[/green]")
 
     def display_help(self):
         """Display help information"""
@@ -77,17 +88,8 @@ class SequoiaCLI:
         )
         self.console.print(Panel(version_text, title="Version", border_style="cyan"))
 
-    async def process_command(self, command: str):
-        """Process command"""
-        command = command.strip().lower()
-
-        if command.startswith("/"):
-            await self._handle_cli_command(command)
-        else:
-            await self._handle_llm_dialogue(command)
-
-    async def _handle_cli_command(self, command: str):
-        """Handle CLI commands that start with /"""
+    async def handle_command(self, command: str):
+        """Handle a CLI command that starts with /"""
         command_handlers = {
             "/quit": self._quit_command,
             "/bye": self._quit_command,
@@ -108,28 +110,19 @@ class SequoiaCLI:
                 f"[red]Unknown command: {command}. Type /help for commands.[/red]"
             )
 
-    def _quit_command(self):
-        """Handle quit/bye commands"""
-        self.console.print("[bold red]Goodbye![/bold red]")
-        self.running = False
+    @property
+    def is_running(self):
+        return self.running
 
-    def _history_command(self):
-        """Handle history command"""
-        history_summary = self.brain.memory.get_history_summary()
-        self.console.print(
-            Panel(
-                history_summary,
-                title="Conversation History",
-                border_style="blue",
-            )
-        )
 
-    def _clear_command(self):
-        """Handle clear command"""
-        self.brain.memory.clear_history()
-        self.console.print("[green]Conversation history cleared.[/green]")
+class LLMDialogueHandler:
+    """Handles user queries to be processed by the LLM"""
 
-    async def _handle_llm_dialogue(self, command: str):
+    def __init__(self, console: Console, brain: Brain):
+        self.console = console
+        self.brain = brain
+
+    async def handle_dialogue(self, command: str):
         """Handle user queries to be processed by the LLM"""
         spinner = Spinner("dots", text="Thinking...")
         live = Live(
@@ -158,6 +151,35 @@ class SequoiaCLI:
                 live.stop()
             self.console.print(f"[red]Error processing input: {str(e)}[/red]")
 
+
+class SequoiaCLI:
+    """Sequoia Interactive CLI Class"""
+
+    def __init__(self):
+        self.session: PromptSession | None = None
+        self.console = Console()
+        self.brain = Brain()
+        self.cli_command_handler = CLICommandHandler(self.console, self.brain)
+        self.llm_dialogue_handler = LLMDialogueHandler(self.console, self.brain)
+
+    def display_welcome(self):
+        """Display welcome message"""
+        welcome_text = Text.from_markup(
+            "[bold blue]Welcome to Sequoia CLI![/bold blue]\n"
+            "[italic]An AI-powered command line interface[/italic]\n"
+            "Type [bold]/help[/bold] for commands or [bold]/quit[/bold] to exit.\n"
+        )
+        self.console.print(Panel(welcome_text, border_style="blue"))
+
+    async def process_command(self, command: str):
+        """Process command"""
+        command = command.strip().lower()
+
+        if command.startswith("/"):
+            await self.cli_command_handler.handle_command(command)
+        else:
+            await self.llm_dialogue_handler.handle_dialogue(command)
+
     async def run_interactive(self):
         """Run interactive CLI"""
         self.session = PromptSession(
@@ -166,7 +188,7 @@ class SequoiaCLI:
 
         self.display_welcome()
 
-        while self.running:
+        while self.cli_command_handler.is_running:
             try:
                 user_input = await self.session.prompt_async(
                     "sequoia> ", completer=command_completer, complete_while_typing=True
