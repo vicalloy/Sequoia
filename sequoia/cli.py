@@ -11,7 +11,7 @@ from rich.panel import Panel
 from rich.spinner import Spinner
 from rich.text import Text
 
-from sequoia.brain import Brain
+from sequoia.brain import Brain, OutputDataType
 
 # Create console object for output
 console = Console()
@@ -119,9 +119,12 @@ class SequoiaCLI:
                 async for data_type, chunk in self.brain.process_input_stream(command):
                     style: str | None = None
                     text = chunk
-                    if data_type in ["thinking", "thinking-end"]:
+                    if data_type in [
+                        OutputDataType.THINKING,
+                        OutputDataType.THINKING_END,
+                    ]:
                         style = "dim"
-                    if data_type == "thinking-end":
+                    if data_type == OutputDataType.THINKING_END:
                         text = f"\n{'-' * 50}\n"
                     if live.is_started:
                         live.stop()
