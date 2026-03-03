@@ -3,12 +3,12 @@
 import asyncio
 
 # Whitelist of allowed read-only commands
-ALLOWED_COMMANDS = ["ls", "grep", "find", "tree", "pwd"]
+ALLOWED_COMMANDS = ["ls", "grep", "find", "tree"]
 
 
 async def run_shell_command(command_parts: list[str]) -> str:
     """
-    Execute a command using with safety checks. support command: ls/grep/find/tree/pwd
+    Execute a command using with safety checks. support command: ls/grep/find/tree
 
     Args:
         command_parts: List of command parts [command, arg1, arg2, ...]

@@ -10,7 +10,6 @@ from pydantic_ai import (
     RunContext,
     ThinkingPart,
 )
-from pydantic_ai.exceptions import UserError
 from pydantic_ai.models.openai import Model, OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai_skills import SkillsToolset
@@ -65,35 +64,25 @@ class Brain:
     def __init__(self, memory: Memory | None = None):
         self.memory = memory if memory else Memory(memory_dir="./memory")
         self.memory.clear_history()
-        try:
-            # Register tools with the agent
-            self.agent = Agent(
-                model=get_ai_model(),
-                system_prompt="",
-                tools=tools,
-                # https://ai.pydantic.dev/mcp/fastmcp-client/#usage
-                toolsets=[
-                    skills_toolset,
-                    # FastMCPToolset('http://localhost:8000/mcp')
-                    # FastMCPToolset(
-                    #     fastmcp.StdioTransport(
-                    #         command='python', args=['mcp_server.py']
-                    #     )
-                    # )
-                ],
-            )
-            self.agent.instructions(add_skills)
-        except UserError as e:
-            # If Ollama is not available, set agent to None
-            print(f"Warning: Could not initialize Ollama agent: {e}")
-            print("Please make sure Ollama is installed and running.")
-            self.agent = None
+        # Register tools with the agent
+        self.agent = Agent(
+            model=get_ai_model(),
+            system_prompt="",
+            tools=tools,
+            # https://ai.pydantic.dev/mcp/fastmcp-client/#usage
+            toolsets=[
+                skills_toolset,
+                # FastMCPToolset('http://localhost:8000/mcp')
+                # FastMCPToolset(
+                #     fastmcp.StdioTransport(
+                #         command='python', args=['mcp_server.py']
+                #     )
+                # )
+            ],
+        )
+        self.agent.instructions(add_skills)
 
     async def process_input(self, user_input: str) -> str:
-        if self.agent is None:
-            error_msg = "Error: Ollama not initialized. Check if Ollama is running."
-            return error_msg
-
         message_history = self.get_memory_message()
         self.add_memory_message("user", user_input)
         result = await self.agent.run(
@@ -109,12 +98,6 @@ class Brain:
         self, user_input: str
     ) -> AsyncGenerator[tuple[OutputDataType, str], None]:
         async def _process_stream():
-            if self.agent is None:
-                error_msg = "Error: Ollama not initialized. Check if Ollama is running."
-                # Add user message to memory if available
-                yield OutputDataType.ERROR, f"{error_msg}\n"
-                return
-
             # Use run_stream_events method to get streaming events
             try:
                 message_history = self.get_memory_message()
