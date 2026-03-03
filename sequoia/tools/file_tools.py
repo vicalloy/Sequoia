@@ -1,6 +1,7 @@
 """File system tools for the Sequoia AI agent."""
 
 import asyncio
+import shutil
 from pathlib import Path
 
 _safe_directory = "./memory"
@@ -114,3 +115,31 @@ async def delete_file(file_path: str) -> str:
         return f"Successfully deleted file: {file_path}"
     except Exception as e:
         return f"Error deleting file: {str(e)}"
+
+
+async def delete_directory(dir_path: str, allow_non_empty: bool = False) -> str:
+    """
+    Delete a directory.
+
+    Args:
+        dir_path: Path to the directory to delete
+        allow_non_empty: Whether to allow deletion of non-empty directories.
+            Defaults to False.
+
+    Returns:
+        Success message or an error message
+    """
+    try:
+        path = _validate_path(dir_path)
+
+        if not path.is_dir():
+            return f"Error: {dir_path} is not a directory"
+
+        if not allow_non_empty and any(path.iterdir()):
+            return f"Error: Directory {dir_path} is not empty. "
+        "Set allow_non_empty=True to delete non-empty directories."
+
+        shutil.rmtree(path)
+        return f"Successfully deleted directory: {dir_path}"
+    except Exception as e:
+        return f"Error deleting directory: {str(e)}"
