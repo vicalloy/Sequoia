@@ -2784,6 +2784,7 @@ name = "sequoia"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "logfire", extra = ["httpx"] },
     { name = "prompt-toolkit" },
     { name = "pydantic-ai" },
     { name = "pydantic-ai-skills" },
@@ -2810,6 +2811,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "logfire", extras = ["httpx"], specifier = ">=4.25.0" },
     { name = "prompt-toolkit", specifier = ">=3.0.0" },
     { name = "pydantic-ai", specifier = ">=1.63.0" },
     { name = "pydantic-ai-skills", specifier = ">=0.5.0" },

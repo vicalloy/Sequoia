@@ -15,6 +15,7 @@ dependencies = [
     "pydantic-ai-slim[fastmcp]>=1.63.0",
     "pydantic-ai-skills>=0.5.0",
     "python-dotenv>=1.0.0",
+    "logfire[httpx]>=4.25.0",
 ]
 
 [dependency-groups]
