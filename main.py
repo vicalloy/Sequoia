@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 
-from sequoia.cli import app
+from sequoia.cli.main import app
 
 # Load environment variables from .env file
 load_dotenv()
