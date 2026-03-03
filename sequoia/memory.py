@@ -22,24 +22,24 @@ def as_pydantic_ai_messages(role: str, content: str):
 class Memory:
     """Memory class for handling conversation history in Sequoia."""
 
-    def __init__(self, memory_dir: str = "./memory", persist_to_json: bool = False):
+    def __init__(self, memory_dir: str = "./memory", persist: bool = False):
         """
         Initialize the memory system.
 
         Args:
             memory_dir: Directory to store memory files
-            persist_to_json: Whether to persist conversation history to JSON file
+            persist: Whether to persist conversation history to JSON file
                              (default: False)
         """
         self.memory_dir = memory_dir
-        self.persist_to_json = persist_to_json
+        self.persist = persist
         os.makedirs(memory_dir, exist_ok=True)
         self.history_file = os.path.join(memory_dir, "history.json")
-        self.history = self._load_history() if persist_to_json else []
+        self.history = self._load_history() if persist else []
 
     def _load_history(self) -> list[dict[str, Any]]:
         """Load conversation history from file."""
-        if self.persist_to_json and os.path.exists(self.history_file):
+        if self.persist and os.path.exists(self.history_file):
             try:
                 with open(self.history_file, encoding="utf-8") as f:
                     return json.load(f)
@@ -49,7 +49,7 @@ class Memory:
 
     def _save_history(self) -> None:
         """Save conversation history to file."""
-        if self.persist_to_json:
+        if self.persist:
             with open(self.history_file, "w", encoding="utf-8") as f:
                 json.dump(self.history, f, ensure_ascii=False, indent=2)
 
