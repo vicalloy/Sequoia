@@ -4,7 +4,7 @@ import tempfile
 
 import pytest
 
-from sequoia.cli import SequoiaCLI
+from sequoia.cli.main import SequoiaCLI
 from sequoia.memory import Memory
 
 
