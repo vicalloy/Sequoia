@@ -9,13 +9,29 @@ from pydantic_ai import SystemPromptPart, TextPart, UserPromptPart
 from pydantic_ai.messages import ModelRequest, ModelResponse
 
 
-def as_pydantic_ai_messages(role: str, content: str):
+def as_pydantic_ai_messages(role: str, content: str, timestamp: str | None = None):
+    # Convert timestamp string to datetime object if provided
+    timestamp_dt = None
+    if timestamp:
+        try:
+            timestamp_dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+        except ValueError:
+            # If timestamp format is invalid, continue without timestamp
+            timestamp_dt = None
+    else:
+        # Use current time if no timestamp provided
+        timestamp_dt = datetime.now()
+
     if role == "user":
-        return ModelRequest(parts=[UserPromptPart(content=content)])
+        return ModelRequest(
+            parts=[UserPromptPart(content=content)], timestamp=timestamp_dt
+        )
     if role == "system":
-        return ModelRequest(parts=[SystemPromptPart(content=content)])
+        return ModelRequest(
+            parts=[SystemPromptPart(content=content)], timestamp=timestamp_dt
+        )
     if role == "assistant":
-        return ModelResponse(parts=[TextPart(content=content)])
+        return ModelResponse(parts=[TextPart(content=content)], timestamp=timestamp_dt)
     return None
 
 
@@ -105,7 +121,9 @@ class Memory:
 
         messages = []
         for item in self.get_history(limit):
-            if message := as_pydantic_ai_messages(item["role"], item["content"]):
+            if message := as_pydantic_ai_messages(
+                item["role"], item["content"], item.get("timestamp")
+            ):
                 messages.append(message)
         return messages
 
