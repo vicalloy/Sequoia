@@ -2,6 +2,7 @@
 
 import json
 import os
+from contextlib import suppress
 from datetime import datetime
 from typing import Any
 
@@ -11,16 +12,10 @@ from pydantic_ai.messages import ModelRequest, ModelResponse
 
 def as_pydantic_ai_messages(role: str, content: str, timestamp: str | None = None):
     # Convert timestamp string to datetime object if provided
-    timestamp_dt = None
+    timestamp_dt = datetime.now()
     if timestamp:
-        try:
+        with suppress(Exception):
             timestamp_dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
-        except ValueError:
-            # If timestamp format is invalid, continue without timestamp
-            timestamp_dt = None
-    else:
-        # Use current time if no timestamp provided
-        timestamp_dt = datetime.now()
 
     if role == "user":
         return ModelRequest(
