@@ -38,3 +38,8 @@ test:
 .PHONY: test-cov
 test-cov:
 	${BIN_PATH}/pytest --cov=sequoia tests/
+
+.PHONY: dev
+dev:
+	open "https://agentchat.vercel.app/?apiUrl=http://localhost:2024&assistantId=agent"
+	langgraph dev

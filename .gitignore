@@ -1,5 +1,6 @@
 /*.md
 memory/
+.langgraph_api/
 
 # Python-generated files
 __pycache__/

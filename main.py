@@ -1,9 +1,6 @@
 from dotenv import load_dotenv
 
+from sequoia.agent import create_agent
 
-def main():
-    load_dotenv()
-
-
-if __name__ == "__main__":
-    main()
+load_dotenv()
+app = create_agent()
