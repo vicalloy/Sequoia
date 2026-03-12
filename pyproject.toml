@@ -105,6 +105,7 @@ ignore = [
     "RET504",  # Unnecessary variable assignment before `return` statement
     "PLR2004",  # Magic value used in comparison
     "PLR0912", # Too many branches
+    "E731", # lambda
 ]
 
 [tool.ruff.lint.isort]
