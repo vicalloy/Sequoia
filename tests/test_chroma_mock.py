@@ -3,7 +3,7 @@
 import tempfile
 from unittest.mock import Mock, patch
 
-from sequoia.tools.vector_store import (
+from sequoia.tools.chroma import (
     AddDocumentTool,
     ChromaToolkit,
     DeleteDocumentTool,
@@ -216,7 +216,7 @@ class TestChromaToolkitWithMocks:
     def test_get_tools(self):
         """Test that all expected tools are returned."""
         with patch(
-            "sequoia.tools.vector_store.HuggingFaceEmbeddings"
+            "sequoia.tools.chroma.HuggingFaceEmbeddings"
         ) as mock_embeddings_class:
             mock_embeddings = Mock()
             mock_embeddings_class.return_value = mock_embeddings
@@ -244,9 +244,9 @@ class TestChromaToolkitWithMocks:
         """Test toolkit initialization with OpenAI embeddings (mocked)."""
         # Mock OpenAI embeddings to avoid requiring API keys
         with patch(
-            "sequoia.tools.vector_store.HuggingFaceEmbeddings"
+            "sequoia.tools.chroma.HuggingFaceEmbeddings"
         ) as mock_hf_embeddings_class:
-            with patch("sequoia.tools.vector_store.OpenAIEmbeddings") as mock_openai:
+            with patch("sequoia.tools.chroma.OpenAIEmbeddings") as mock_openai:
                 mock_embeddings = Mock()
                 mock_hf_embeddings_class.return_value = mock_embeddings
                 mock_openai.return_value = mock_embeddings

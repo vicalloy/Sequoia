@@ -5,7 +5,7 @@ from deepagents import SubAgent, create_deep_agent
 from deepagents.backends import CompositeBackend, FilesystemBackend, StateBackend
 from langchain.chat_models import init_chat_model
 
-from sequoia.tools.vector_store import ChromaToolkit
+from sequoia.tools.chroma import ChromaToolkit
 
 system_prompt = "You are a helpful assistant"
 
