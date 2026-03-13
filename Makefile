@@ -33,7 +33,7 @@ format:
 
 .PHONY: test
 test:
-	${BIN_PATH}/pytest tests/
+	${BIN_PATH}/pytest -s tests/
 
 .PHONY: test-cov
 test-cov:
@@ -41,5 +41,5 @@ test-cov:
 
 .PHONY: dev
 dev:
-	open "https://agentchat.vercel.app/?apiUrl=http://localhost:2024&assistantId=agent"
+	open "https://agentchat.vercel.app/?apiUrl=http://127.0.0.1:2024&assistantId=agent"
 	langgraph dev
