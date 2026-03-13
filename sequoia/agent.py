@@ -6,6 +6,7 @@ from deepagents.backends import CompositeBackend, FilesystemBackend, StateBacken
 from langchain.chat_models import init_chat_model
 
 from sequoia.tools.chroma import ChromaToolkit
+from sequoia.tools.surrealdb import SurrealDBToolkit
 
 system_prompt = "You are a helpful assistant"
 
@@ -39,19 +40,13 @@ def composite_backend(rt):
     )
 
 
-# 注：向量数据库使用。将文字向量化需要用到推理模型，对性能有一定的要求。
-# bge-small-zh-v1.5
-# https://docs.langchain.com/oss/python/integrations/vectorstores
-# Chroma
-# surrealdb
-
-
 def create_agent():
     model = init_chat_model(model=os.environ["MODEL_NAME"], streaming=True)
     agent = create_deep_agent(
         model=model,
         tools=[
             *ChromaToolkit().get_tools(),
+            *SurrealDBToolkit().get_tools(),
         ],
         # memory=["/fs/memories/AGENTS.md"],
         skills=["/fs/skills/"],
@@ -60,6 +55,3 @@ def create_agent():
         system_prompt=system_prompt,
     )
     return agent
-
-
-# TODO ChromaDB

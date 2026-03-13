@@ -29,8 +29,6 @@ class AddDocumentTool(BaseTool):
     _db: Chroma = PrivateAttr()
 
     def __init__(self, db: Chroma, **kwargs):
-        # Remove 'db' from kwargs if present to avoid validation issues
-        kwargs.pop("db", None)
         super().__init__(**kwargs)
         self._db = db
 
@@ -84,8 +82,6 @@ class DeleteDocumentTool(BaseTool):
     _db: Chroma = PrivateAttr()
 
     def __init__(self, db: Chroma, **kwargs):
-        # Remove 'db' from kwargs if present to avoid validation issues
-        kwargs.pop("db", None)
         super().__init__(**kwargs)
         self._db = db
 
@@ -133,8 +129,6 @@ class UpdateDocumentTool(BaseTool):
     _db: Chroma = PrivateAttr()
 
     def __init__(self, db: Chroma, **kwargs):
-        # Remove 'db' from kwargs if present to avoid validation issues
-        kwargs.pop("db", None)
         super().__init__(**kwargs)
         self._db = db
 
@@ -192,8 +186,6 @@ class QueryDocumentTool(BaseTool):
     _db: Chroma = PrivateAttr()
 
     def __init__(self, db: Chroma, **kwargs):
-        # Remove 'db' from kwargs if present to avoid validation issues
-        kwargs.pop("db", None)
         super().__init__(**kwargs)
         self._db = db
 
