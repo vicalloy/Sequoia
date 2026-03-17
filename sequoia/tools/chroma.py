@@ -175,6 +175,9 @@ class QueryDocumentInput(BaseModel):
 
     query: str = Field(..., description="The query text to search in the vector store")
     k: int | None = Field(5, description="Number of similar documents to retrieve")
+    offset: int | None = Field(
+        0, description="Offset to start from when retrieving documents"
+    )
 
 
 class QueryDocumentTool(BaseTool):
@@ -189,7 +192,7 @@ class QueryDocumentTool(BaseTool):
         super().__init__(**kwargs)
         self._db = db
 
-    def _run(self, query: str, k: int = 5) -> str:
+    def _run(self, query: str, k: int = 5, offset: int = 0) -> str:
         """Query similar documents from the Chroma vector store."""
         try:
             # Validate input
@@ -200,17 +203,27 @@ class QueryDocumentTool(BaseTool):
             if k <= 0:
                 return "Error: Number of documents to retrieve must be positive."
 
-            # Perform similarity search
-            results = self._db.similarity_search(query, k=k)
+            # Ensure offset is non-negative
+            if offset < 0:
+                return "Error: Offset must be non-negative."
+
+            # Perform similarity search with a larger k to account for offset
+            total_results_needed = k + offset
+            all_results = self._db.similarity_search(query, k=total_results_needed)
+
+            # Apply offset and limit to results
+            results = (
+                all_results[offset : offset + k] if len(all_results) > offset else []
+            )
 
             if not results:
                 return "No similar documents found."
 
-            # Format the results
+            # Format the results without content length limitation
             formatted_results = []
             for i, doc in enumerate(results):
                 formatted_doc = (
-                    f"Document {i + 1}:\n  Content: {doc.page_content[:200]}...\n"
+                    f"Document {i + 1 + offset}:\n  Content: {doc.page_content}\n"
                 )
                 if doc.metadata:
                     formatted_doc += f"  Metadata: {doc.metadata}\n"
