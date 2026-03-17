@@ -276,6 +276,10 @@ class QueryGraphInput(BaseModel):
     params: dict[str, Any] | None = Field(
         None, description="Optional parameters for the query"
     )
+    limit: int | None = Field(None, description="Maximum number of records to return")
+    offset: int | None = Field(
+        0, description="Number of records to skip before returning results"
+    )
 
 
 class QueryGraphTool(BaseTool):
@@ -290,15 +294,46 @@ class QueryGraphTool(BaseTool):
         super().__init__(**kwargs)
         self._db = db
 
-    def _run(self, query: str, params: dict[str, Any] | None = None) -> str:
+    def _run(
+        self,
+        query: str,
+        params: dict[str, Any] | None = None,
+        limit: int | None = None,
+        offset: int = 0,
+    ) -> str:
         """Query nodes and relationships from the SurrealDB graph database."""
         try:
             # Validate input
             if not query or not query.strip():
                 return "Error: Query cannot be empty."
 
+            # Validate limit and offset
+            if limit is not None and limit <= 0:
+                return "Error: Limit must be positive."
+            if offset < 0:
+                return "Error: Offset must be non-negative."
+
+            # If limit and offset are specified, we need to modify the query
+            # to include LIMIT and START clauses
+            modified_query = query.strip()
+            if limit is not None:
+                # Check if LIMIT clause already exists in the query
+                if "LIMIT" not in modified_query.upper():
+                    modified_query += f" LIMIT {limit}"
+            if offset > 0:
+                # Check if START clause already exists in the query
+                if (
+                    "START" not in modified_query.upper()
+                    and "OFFSET" not in modified_query.upper()
+                ):
+                    if limit is not None or "LIMIT" in modified_query.upper():
+                        modified_query += f" START {offset}"
+                    else:
+                        # If there's no LIMIT, add LIMIT first to use START
+                        modified_query += f" LIMIT 1000 START {offset}"
+
             # Execute the query using the proper query method
-            result = self._db.query(query, params or {})
+            result = self._db.query(modified_query, params or {})
 
             if result and isinstance(result, list) and len(result) > 0:
                 # Format the results properly
