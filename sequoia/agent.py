@@ -12,6 +12,7 @@ system_prompt = "You are a helpful assistant"
 
 DATA_PATH = Path("./data").resolve()
 
+
 generic_worker = SubAgent(
     name="generic_worker",
     description="A general-purpose executor capable of assuming various "
@@ -31,6 +32,30 @@ researcher = SubAgent(
 )
 
 
+# ChromaToolkit subagent
+chroma_worker = SubAgent(
+    name="chroma_worker",
+    description="A subagent dedicated to Chroma vector database operations, "
+    "responsible for embedding, retrieval, and other vector storage tasks.",
+    system_prompt="You are an assistant focused on Chroma vector database "
+    "operations, responsible for all tasks related to vector storage "
+    "and retrieval.",
+    tools=ChromaToolkit().get_tools(),
+)
+
+# SurrealDBToolkit subagent
+surrealdb_worker = SubAgent(
+    name="surrealdb_worker",
+    description="A subagent dedicated to SurrealDB database operations, responsible "
+    "for data storage, query, management, and also graph database tasks "
+    "including graph data operations.",
+    system_prompt="You are an assistant focused on SurrealDB database operations, "
+    "responsible for all tasks related to SurrealDB data storage, "
+    "queries, and graph database usage including graph data operations.",
+    tools=SurrealDBToolkit().get_tools(),
+)
+
+
 def composite_backend(rt):
     return CompositeBackend(
         default=StateBackend(rt),
@@ -44,13 +69,15 @@ def create_agent():
     model = init_chat_model(model=os.environ["MODEL_NAME"], streaming=True)
     agent = create_deep_agent(
         model=model,
-        tools=[
-            *ChromaToolkit().get_tools(),
-            *SurrealDBToolkit().get_tools(),
-        ],
+        tools=[],
         # memory=["/fs/memories/AGENTS.md"],
         skills=["/fs/skills/"],
-        subagents=[generic_worker, researcher],
+        subagents=[
+            generic_worker,
+            researcher,
+            chroma_worker,
+            # surrealdb_worker,
+        ],
         backend=composite_backend,
         system_prompt=system_prompt,
     )
