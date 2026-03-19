@@ -35,23 +35,38 @@ researcher = SubAgent(
 # ChromaToolkit subagent
 chroma_worker = SubAgent(
     name="chroma_worker",
-    description="A subagent dedicated to Chroma vector database operations, "
-    "responsible for embedding, retrieval, and other vector storage tasks.",
-    system_prompt="You are an assistant focused on Chroma vector database "
-    "operations, responsible for all tasks related to vector storage "
-    "and retrieval.",
+    description=(
+        "Primary subagent for vector-database operations using Chroma."
+        " Use this agent for embedding generation, similarity search,"
+        " vector storage, index management, and retrieval tasks."
+        " Search keywords: vector, embeddings, chroma, similarity, retrieval."
+    ),
+    system_prompt=(
+        "You are a Chroma Vector DB specialist. For embedding generation,"
+        " similarity search, vector storage, and index management use the"
+        " provided Chroma tools. Return concise, machine-readable outputs"
+        " that include embedding IDs, document IDs, similarity scores,"
+        " and relevant metadata."
+    ),
     tools=ChromaToolkit().get_tools(),
 )
 
-# SurrealDBToolkit subagent
+# SurrealDBToolkit subagent — focused on graph data operations
 surrealdb_worker = SubAgent(
     name="surrealdb_worker",
-    description="A subagent dedicated to SurrealDB database operations, responsible "
-    "for data storage, query, management, and also graph database tasks "
-    "including graph data operations.",
-    system_prompt="You are an assistant focused on SurrealDB database operations, "
-    "responsible for all tasks related to SurrealDB data storage, "
-    "queries, and graph database usage including graph data operations.",
+    description=(
+        "Primary subagent for graph-database operations using SurrealDB."
+        " Use this agent whenever you need graph storage, graph queries,"
+        " relationship management, graph traversal, or schema inspection."
+        " Search keywords: graph, graph-db, surrealdb, schema, relationships."
+    ),
+    system_prompt=(
+        "You are a SurrealDB Graph specialist. For any graph-data task —"
+        " creating/updating entities, traversing relationships, running"
+        " graph queries, or managing schemas — use the provided SurrealDB"
+        " tools. Return concise, machine-readable outputs that include"
+        " table/schema names and record IDs when applicable."
+    ),
     tools=SurrealDBToolkit().get_tools(),
 )
 
@@ -76,7 +91,7 @@ def create_agent():
             generic_worker,
             researcher,
             chroma_worker,
-            # surrealdb_worker,
+            surrealdb_worker,
         ],
         backend=composite_backend,
         system_prompt=system_prompt,
