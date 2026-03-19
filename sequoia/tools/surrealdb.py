@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 from langchain_core.tools import BaseTool, BaseToolkit
@@ -335,7 +336,7 @@ class QueryGraphTool(BaseTool):
             # Execute the query using the proper query method
             result = self._db.query(modified_query, params or {})
 
-            if result and isinstance(result, list) and len(result) > 0:
+            if result and isinstance(result, list):
                 # Format the results properly
                 formatted_results = []
                 for res in result:
@@ -352,9 +353,39 @@ class QueryGraphTool(BaseTool):
                         formatted_results.append(str(result_data))
 
                 return "Graph query results:\n" + "\n".join(formatted_results)
+            if result and isinstance(result, dict):
+                return f"Graph query results:\n{result}"
             return "No results found."
         except Exception as e:
             return f"Error querying graph from SurrealDB: {str(e)}"
+
+
+class GetAllTablesSchemaTool(BaseTool):
+    """Tool to retrieve the all tables schema for the SurrealDB graph database."""
+
+    name: str = "get_all_tables_schema"
+    description: str = "Retrieve the database all tables schema"
+    args_schema: type | None = None
+    _db: Surreal = PrivateAttr()
+
+    def __init__(self, db: Surreal, **kwargs):
+        super().__init__(**kwargs)
+        self._db = db
+
+    def _run(self) -> str:
+        """Execute INFO FOR DB and return formatted schema information."""
+        try:
+            result = self._db.query("INFO FOR DB")
+
+            try:
+                pretty = json.dumps(result["tables"], indent=2, ensure_ascii=False)
+            except Exception:
+                # Fallback to string representation if JSON serialization fails
+                pretty = str(result)
+
+            return f"Tables schema/info:\n{pretty}"
+        except Exception as e:
+            return f"Error retrieving tables schema from SurrealDB: {str(e)}"
 
 
 class SurrealDBToolkit(BaseToolkit):
@@ -371,6 +402,7 @@ class SurrealDBToolkit(BaseToolkit):
             DeleteGraphNodeTool(db=self._db),
             UpdateGraphNodeTool(db=self._db),
             QueryGraphTool(db=self._db),
+            GetAllTablesSchemaTool(db=self._db),
         ]
 
     def __init__(self, db_path: str = "./data/sequoia-db"):

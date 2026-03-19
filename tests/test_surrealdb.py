@@ -16,13 +16,14 @@ class TestSurrealDBToolkit:
         """Test that the toolkit initializes correctly with memory database."""
         toolkit = SurrealDBToolkit(db_path=":memory:")
         tools = toolkit.get_tools()
-
-        assert len(tools) == 5
+        # We expect 6 tools now including the schema/info tool
+        assert len(tools) == 6
         assert any(tool.name == "add_graph_node" for tool in tools)
         assert any(tool.name == "add_graph_edge" for tool in tools)
         assert any(tool.name == "delete_graph_node" for tool in tools)
         assert any(tool.name == "update_graph_node" for tool in tools)
         assert any(tool.name == "query_graph" for tool in tools)
+        assert any(tool.name == "get_all_tables_schema" for tool in tools)
 
     def test_add_and_query_nodes(self):
         """Test adding nodes and querying them from the graph database."""
@@ -153,3 +154,24 @@ class TestSurrealDBToolkit:
         # Verify the node is deleted
         query_result = query_tool._run(query="SELECT * FROM person")
         assert "Charlie" not in query_result
+
+    def test_get_all_tables_schema(self):
+        """Test retrieving all table schemas via the INFO FOR DB command."""
+        toolkit = SurrealDBToolkit(db_path=":memory:")
+        tools = toolkit.get_tools()
+
+        add_node_tool = next(tool for tool in tools if tool.name == "add_graph_node")
+        schema_tool = next(
+            tool for tool in tools if tool.name == "get_all_tables_schema"
+        )
+
+        # Ensure there is at least one table by creating a node
+        add_node_tool._run(
+            node_type="person", properties={"name": "Dana", "age": 28}, node_id="dana"
+        )
+
+        schema_result = schema_tool._run()
+
+        assert "Tables schema/info:" in schema_result
+        # The schema output should reference the table name we created
+        assert "person" in schema_result

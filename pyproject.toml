@@ -96,7 +96,7 @@ select = [
     "ICN",  # flake8-import-conventions
     "N",  # pep8-naming
     #    "PGH",  # pygrep-hooks
-    "PLC", "PLE", "PLR", "PLW",  # Pylint
+    "PLC", "PLE", "PLW",  # Pylint
     "Q",  # flake8-quotes
     "RET",  # flake8-return
     #    "RUF",  # Ruff-specific rules
