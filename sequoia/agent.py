@@ -7,6 +7,8 @@ from langchain.chat_models import init_chat_model
 from langchain_core.rate_limiters import InMemoryRateLimiter
 
 from .subagents import subagents
+from .tools.fs import FsToolkit
+from .tools.novel import tools as novel_tools
 
 system_prompt = "You are a helpful assistant"
 
@@ -35,7 +37,7 @@ def create_agent():
     )
     agent = create_deep_agent(
         model=model,
-        tools=[],
+        tools=[*novel_tools, *FsToolkit().get_tools()],
         # memory=["/fs/memories/AGENTS.md"],
         skills=["/fs/skills/"],
         subagents=subagents,
