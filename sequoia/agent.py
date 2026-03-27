@@ -10,9 +10,13 @@ from .subagents import subagents
 from .tools.fs import FsToolkit
 from .tools.novel import tools as novel_tools
 
-system_prompt = "You are a helpful assistant"
-
+# Init data paths
 DATA_PATH = Path("./data").resolve()
+DATA_PATH.mkdir(parents=True, exist_ok=True)
+CONVERSATION_HISTORY_PATH = DATA_PATH / "conversation_history"
+CONVERSATION_HISTORY_PATH.mkdir(parents=True, exist_ok=True)
+MEMORY_FILE = DATA_PATH / "AGENTS.md"
+MEMORY_FILE.touch(exist_ok=True)
 
 
 rate_limiter: None | InMemoryRateLimiter = None
@@ -27,6 +31,9 @@ def composite_backend(rt):
         default=StateBackend(rt),
         routes={
             "/fs/": FilesystemBackend(root_dir=DATA_PATH, virtual_mode=True),
+            "/conversation_history/": FilesystemBackend(
+                root_dir=CONVERSATION_HISTORY_PATH, virtual_mode=True
+            ),
         },
     )
 
@@ -38,10 +45,9 @@ def create_agent():
     agent = create_deep_agent(
         model=model,
         tools=[*novel_tools, *FsToolkit().get_tools()],
-        # memory=["/fs/memories/AGENTS.md"],
+        memory=["/fs/AGENTS.md"],
         skills=["/fs/skills/"],
         subagents=subagents,
         backend=composite_backend,
-        system_prompt=system_prompt,
     )
     return agent
