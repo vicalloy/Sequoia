@@ -19,20 +19,6 @@ def is_subagent_enabled(name: str):
     return "all" in subagents_names or name in subagents_names
 
 
-if is_subagent_enabled("generic"):
-    subagents.append(
-        SubAgent(
-            name="generic_worker",
-            description="A general-purpose executor capable of assuming various "
-            "specific roles.",
-            system_prompt="The role you are now playing is: {role}. Please follow the "
-            "specific instructions below to complete the task: "
-            "{specific_instructions}. You may use all provided tools to achieve "
-            "your objective.",
-            tools=[],
-        )
-    )
-
 if is_subagent_enabled("researcher"):
     subagents.append(
         SubAgent(
