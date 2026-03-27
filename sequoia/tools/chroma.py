@@ -2,8 +2,7 @@ from typing import Any
 
 from langchain_chroma import Chroma
 from langchain_core.tools import BaseTool, BaseToolkit
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_openai import OpenAIEmbeddings
+from langchain_ollama import OllamaEmbeddings
 from pydantic import BaseModel, Field, PrivateAttr
 
 
@@ -238,7 +237,7 @@ class ChromaToolkit(BaseToolkit):
     """Toolkit for working with Chroma vector store."""
 
     _db: Chroma = PrivateAttr()
-    _embeddings: OpenAIEmbeddings | HuggingFaceEmbeddings = PrivateAttr()
+    _embeddings: OllamaEmbeddings = PrivateAttr()
 
     def get_tools(self) -> list[BaseTool]:
         """Return a list of tools for interacting with Chroma vector store."""
@@ -249,21 +248,12 @@ class ChromaToolkit(BaseToolkit):
             QueryDocumentTool(db=self._db),
         ]
 
-    def __init__(self, db_path: str = "./data/", use_openai: bool = False):
+    def __init__(self, db_path: str = "./data/"):
         """Initialize the Chroma database toolkit."""
         super().__init__()
 
-        # Initialize embeddings based on the use_openai flag
-        if use_openai:
-            # Use OpenAI embeddings if API key is available
-            self._embeddings = OpenAIEmbeddings()
-        else:
-            # Use a lighter HuggingFace model
-            self._embeddings = HuggingFaceEmbeddings(
-                model_name="all-MiniLM-L6-v2",  # Smaller, faster model
-                model_kwargs={"device": "cpu"},
-                encode_kwargs={"normalize_embeddings": True},
-            )
+        # Use Ollama embeddings with qwen3-embedding:0.6b model
+        self._embeddings = OllamaEmbeddings(model="qwen3-embedding:0.6b")
 
         self._db = Chroma(
             collection_name="example_collection",

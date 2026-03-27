@@ -189,7 +189,7 @@ class TestQueryDocumentToolWithMocks:
         assert "Test document content for query" in result
 
         # Verify the database method was called correctly
-        mock_db.similarity_search.assert_called_once_with(query="test query", k=2)
+        mock_db.similarity_search.assert_called_once_with("test query", k=2)
 
     def test_query_document_empty_query(self):
         """Test querying with empty query."""
@@ -215,9 +215,7 @@ class TestChromaToolkitWithMocks:
 
     def test_get_tools(self):
         """Test that all expected tools are returned."""
-        with patch(
-            "sequoia.tools.chroma.HuggingFaceEmbeddings"
-        ) as mock_embeddings_class:
+        with patch("sequoia.tools.chroma.OllamaEmbeddings") as mock_embeddings_class:
             mock_embeddings = Mock()
             mock_embeddings_class.return_value = mock_embeddings
 
@@ -238,22 +236,4 @@ class TestChromaToolkitWithMocks:
                 # Verify each tool has the correct database instance
                 for tool in tools:
                     assert hasattr(tool, "_db")
-                    assert tool._db is toolkit.db
-
-    def test_initialization_with_openai_embeddings_mocked(self):
-        """Test toolkit initialization with OpenAI embeddings (mocked)."""
-        # Mock OpenAI embeddings to avoid requiring API keys
-        with patch(
-            "sequoia.tools.chroma.HuggingFaceEmbeddings"
-        ) as mock_hf_embeddings_class:
-            with patch("sequoia.tools.chroma.OpenAIEmbeddings") as mock_openai:
-                mock_embeddings = Mock()
-                mock_hf_embeddings_class.return_value = mock_embeddings
-                mock_openai.return_value = mock_embeddings
-
-                with tempfile.TemporaryDirectory() as temp_dir:
-                    toolkit = ChromaToolkit(db_path=temp_dir, use_openai=True)
-
-                    # Verify OpenAI embeddings were used
-                    mock_openai.assert_called_once()
-                    assert toolkit.db is not None
+                    assert tool._db is toolkit._db

@@ -1,11 +1,11 @@
 """Unit tests for Chroma vector store tools."""
 
 import tempfile
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 from langchain_chroma import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_ollama import OllamaEmbeddings
 
 from sequoia.tools.chroma import (
     AddDocumentTool,
@@ -23,14 +23,14 @@ class TestAddDocumentTool:
     def chroma_db(self):
         """Create a temporary Chroma database for testing."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            embeddings = HuggingFaceEmbeddings(
-                model_name="all-MiniLM-L6-v2",
-                model_kwargs={"device": "cpu"},
-                encode_kwargs={"normalize_embeddings": True},
-            )
+            # Use mock embeddings to avoid requiring ollama service
+            mock_embeddings = Mock(spec=OllamaEmbeddings)
+            mock_embeddings.embed_documents.return_value = [[0.1] * 384]
+            mock_embeddings.embed_query.return_value = [0.1] * 384
+
             db = Chroma(
                 collection_name="test_collection",
-                embedding_function=embeddings,
+                embedding_function=mock_embeddings,
                 persist_directory=temp_dir,
             )
             yield db
@@ -80,14 +80,14 @@ class TestDeleteDocumentTool:
     def chroma_db_with_doc(self):
         """Create a temporary Chroma database with a document."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            embeddings = HuggingFaceEmbeddings(
-                model_name="all-MiniLM-L6-v2",
-                model_kwargs={"device": "cpu"},
-                encode_kwargs={"normalize_embeddings": True},
-            )
+            # Use mock embeddings to avoid requiring ollama service
+            mock_embeddings = Mock(spec=OllamaEmbeddings)
+            mock_embeddings.embed_documents.return_value = [[0.1] * 384]
+            mock_embeddings.embed_query.return_value = [0.1] * 384
+
             db = Chroma(
                 collection_name="test_collection",
-                embedding_function=embeddings,
+                embedding_function=mock_embeddings,
                 persist_directory=temp_dir,
             )
             # Add a test document
@@ -137,14 +137,14 @@ class TestUpdateDocumentTool:
     def chroma_db_with_doc(self):
         """Create a temporary Chroma database with a document."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            embeddings = HuggingFaceEmbeddings(
-                model_name="all-MiniLM-L6-v2",
-                model_kwargs={"device": "cpu"},
-                encode_kwargs={"normalize_embeddings": True},
-            )
+            # Use mock embeddings to avoid requiring ollama service
+            mock_embeddings = Mock(spec=OllamaEmbeddings)
+            mock_embeddings.embed_documents.return_value = [[0.1] * 384]
+            mock_embeddings.embed_query.return_value = [0.1] * 384
+
             db = Chroma(
                 collection_name="test_collection",
-                embedding_function=embeddings,
+                embedding_function=mock_embeddings,
                 persist_directory=temp_dir,
             )
             # Add a test document
@@ -200,14 +200,19 @@ class TestQueryDocumentTool:
     def chroma_db_with_docs(self):
         """Create a temporary Chroma database with multiple documents."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            embeddings = HuggingFaceEmbeddings(
-                model_name="all-MiniLM-L6-v2",
-                model_kwargs={"device": "cpu"},
-                encode_kwargs={"normalize_embeddings": True},
-            )
+            # Use mock embeddings to avoid requiring ollama service
+            mock_embeddings = Mock(spec=OllamaEmbeddings)
+            # Return multiple embeddings for multiple documents
+            mock_embeddings.embed_documents.return_value = [
+                [0.1] * 384,
+                [0.2] * 384,
+                [0.3] * 384,
+            ]
+            mock_embeddings.embed_query.return_value = [0.1] * 384
+
             db = Chroma(
                 collection_name="test_collection",
-                embedding_function=embeddings,
+                embedding_function=mock_embeddings,
                 persist_directory=temp_dir,
             )
             # Add test documents
@@ -267,35 +272,17 @@ class TestChromaToolkit:
         assert "update_document" in tool_names
         assert "query_document" in tool_names
 
-        # Verify each tool has the correct database instance
-        for tool in tools:
-            assert hasattr(tool, "db")
-            assert tool.db is toolkit.db
-
     def test_initialization_with_defaults(self):
         """Test toolkit initialization with default parameters."""
         toolkit = ChromaToolkit()
 
-        assert hasattr(toolkit, "db")
-        assert toolkit.db is not None
+        assert hasattr(toolkit, "_db")
+        assert toolkit._db is not None
 
     def test_initialization_with_custom_path(self):
         """Test toolkit initialization with custom path."""
         with tempfile.TemporaryDirectory() as temp_dir:
             toolkit = ChromaToolkit(db_path=temp_dir)
 
-            assert hasattr(toolkit, "db")
-            assert toolkit.db is not None
-
-    def test_initialization_with_openai_embeddings(self):
-        """Test toolkit initialization with OpenAI embeddings."""
-        # Mock OpenAI embeddings to avoid requiring API keys
-        with patch("sequoia.tools.chroma.OpenAIEmbeddings") as mock_openai:
-            mock_embeddings = Mock()
-            mock_openai.return_value = mock_embeddings
-
-            toolkit = ChromaToolkit(use_openai=True)
-
-            # Verify OpenAI embeddings were used
-            mock_openai.assert_called_once()
-            assert toolkit.db is not None
+            assert hasattr(toolkit, "_db")
+            assert toolkit._db is not None
