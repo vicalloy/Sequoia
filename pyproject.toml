@@ -23,8 +23,8 @@ dependencies = [
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[project.packages]
-include = ["sequoia"]
+[tool.setuptools.packages.find]
+include = ["sequoia*"]
 
 [dependency-groups]
 dev = [
@@ -119,7 +119,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["goomba"]
+known-first-party = ["sequoia"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
